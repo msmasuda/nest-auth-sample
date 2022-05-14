@@ -3,31 +3,22 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
+// import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { User } from './users/entities/user.entity';
-
-const entities = [User];
+// import { RentalModule } from './rental/rental.module';
+// import { SellModule } from './sell/sell.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
+    TypeOrmModule.forRoot(), // typeormを使うために使用
+    ConfigModule.forRoot({ // envファイルを組み込むために使用
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: process.env.DB_TYPE as any,
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      entities: entities,
-      synchronize: true,
-    }),
-    UsersModule,
-    AuthModule,
+    AuthModule, // 必須！これが無いと認証処理が動かない
   ],
-  controllers: [AppController],
+  controllers: [
+    AppController // 後述するクラス
+  ],
   providers: [AppService],
 })
 export class AppModule {}

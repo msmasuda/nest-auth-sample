@@ -1,20 +1,37 @@
-import { Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ExtractJwt, Strategy as BaseJwtStrategy } from 'passport-jwt';
 
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { JwtPayload } from './auth.interface';
+import { User } from 'src/users/entities/user.entity';
+
+
+// JwtについているPayload情報の型
+interface JWTPayload  {
+  userId: User['id'];
+  email: User['email'];
+}
+
+/**
+ * @description JWTの認証処理を行うクラス
+ */
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+export class JwtStrategy extends PassportStrategy(BaseJwtStrategy) {
+  constructor(private readonly configService: ConfigService) {
     super({
+      // Authorization bearerからトークンを読み込む関数を返す
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // 有効期間を無視するかどうか
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      // envファイルから秘密鍵を渡す
+      secretOrKey: configService.get<string>('JWT_SECRET_KEY'),
     });
   }
 
-  async validate(payload: { userId: number }) {
-    return {
-      userId: payload.userId,
-    };
+  // ここでPayloadを使ったバリデーション処理を実行できる
+  // Payloadは、AuthService.login()で定義した値
+  async validate(payload: JWTPayload): Promise<JwtPayload> {
+    return { userId: payload.userId, email: payload.email };
   }
 }
